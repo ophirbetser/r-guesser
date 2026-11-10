@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="r-guesser: look at a scatter plot and guess Pearson's correlation coefficient.">
+  <title>r-guesser</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+    <header class="head">
+      <h1 class="logo">r<span>-guesser</span></h1>
+      <div class="hud" aria-live="polite">
+        <div class="hud-item"><span class="hud-label">Round</span><span class="hud-value" id="hud-round">–</span></div>
+        <div class="hud-item"><span class="hud-label">Lives</span><span class="hud-value lives" id="hud-lives" aria-label="lives"></span></div>
+        <div class="hud-item"><span class="hud-label">Score</span><span class="hud-value" id="hud-score">0</span></div>
+        <div class="hud-item"><span class="hud-label">Best</span><span class="hud-value" id="hud-best">0</span></div>
+      </div>
+    </header>
+
+    <!-- Start screen -->
+    <section class="card start" id="screen-start">
+      <h2>How well can you eyeball a correlation?</h2>
+      <ul class="rules">
+        <li>Each round shows a scatter plot. Type your guess for <strong>Pearson's r</strong>, from <strong>−1</strong> to <strong>1</strong>, and press <kbd>Enter</kbd>.</li>
+        <li>Off by more than <strong>0.10</strong> → lose a ♥. Within <strong>0.02</strong> → win a ♥ back (max 5).</li>
+        <li>You start with <strong>3 ♥</strong>. Survive as many rounds as you can.</li>
+        <li>From round 4, watch for <strong>tricky rounds</strong> (outliers, curves, clusters) that show where r can mislead.</li>
+      </ul>
+      <button class="btn btn-primary" id="start-btn" type="button">Start game</button>
+    </section>
+
+    <!-- Game screen -->
+    <section class="card game" id="screen-game" hidden>
+      <div class="plot-wrap">
+        <svg id="plot" viewBox="0 0 400 400" role="img" aria-label="Scatter plot"></svg>
+        <span class="tricky-badge" id="tricky-badge" hidden>Tricky round</span>
+      </div>
+
+      <div class="panel">
+        <form id="guess-form" autocomplete="off" novalidate>
+          <label for="guess" class="prompt">What is r?</label>
+          <div class="guess-row">
+            <input id="guess" type="text" inputmode="decimal" placeholder="e.g. 0.63" aria-describedby="guess-msg">
+            <button class="btn btn-primary" id="guess-btn" type="submit">Guess</button>
+          </div>
+          <p class="msg" id="guess-msg" role="alert"></p>
+        </form>
+
+        <div class="result" id="result" hidden>
+          <p class="verdict" id="verdict"></p>
+          <svg id="bar" viewBox="0 0 320 64" role="img" aria-label="Your guess compared with the true r"></svg>
+          <p class="detail" id="detail"></p>
+          <p class="explain" id="explain" hidden></p>
+          <button class="btn btn-primary" id="next-btn" type="button">Next round <kbd>Enter</kbd></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Game over screen -->
+    <section class="card over" id="screen-over" hidden>
+      <h2 id="over-title">Game over</h2>
+      <div class="stats" id="over-stats"></div>
+      <figure class="history">
+        <figcaption>
+          <span class="chart-title">Your guesses vs the true r</span>
+          <span class="legend">
+            <span class="legend-item"><svg width="12" height="12" aria-hidden="true"><circle cx="6" cy="6" r="4.5" class="pt-hit"/></svg>Within 0.10</span>
+            <span class="legend-item"><svg width="12" height="12" aria-hidden="true"><path d="M2 2L10 10M10 2L2 10" class="pt-miss"/></svg>Missed</span>
+            <span class="legend-item"><svg width="12" height="12" aria-hidden="true"><circle cx="6" cy="6" r="4.5" class="pt-tricky-ring"/></svg>Tricky round</span>
+          </span>
+        </figcaption>
+        <svg id="history" viewBox="0 0 360 360" role="img" aria-label="Scatter of your guesses against the true correlations"></svg>
+      </figure>
+      <button class="btn btn-primary" id="again-btn" type="button">Play again <kbd>Enter</kbd></button>
+    </section>
+
+    <footer class="foot">r measures how tightly points follow a straight line. The axis scale never changes it.</footer>
+  </main>
+  <script src="game.js"></script>
+</body>
+</html>
