@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="r-guesser: look at a scatter plot and guess Pearson's correlation coefficient.">
+  <title>r-guesser</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+    <header class="head">
+      <h1 class="logo"><span class="logo-r">r</span>-guesser</h1>
+      <div class="hud" aria-live="polite">
+        <div class="hud-item"><span class="hud-label">Round</span><span class="hud-value" id="hud-round">–</span></div>
+        <div class="hud-item" id="hud-lives-tile"><span class="hud-label">Lives</span><span class="hud-value lives" id="hud-lives" role="img" aria-label="3 of 5 lives"></span></div>
+        <div class="hud-item"><span class="hud-label">Score</span><span class="hud-value" id="hud-score">0</span></div>
+        <div class="hud-item"><span class="hud-label">Best</span><span class="hud-value" id="hud-best">0</span></div>
+      </div>
+      <button id="mute-btn" class="icon-btn" type="button" aria-pressed="false" aria-label="Mute sound" title="Mute sound (M)">
+        <svg class="ico-on" viewBox="0 0 9 7" width="20" height="16" shape-rendering="crispEdges" aria-hidden="true"><path d="M0 2h2V1h1V0h1v7H3V6H2V5H0zM5 2h1v3H5zM7 1h1v5H7z" fill="currentColor"/></svg>
+        <svg class="ico-off" viewBox="0 0 9 7" width="20" height="16" shape-rendering="crispEdges" aria-hidden="true"><path d="M0 2h2V1h1V0h1v7H3V6H2V5H0zM5 1h1v1H5zM8 1h1v1H8zM6 2h1v1H6zM7 2h1v1H7zM6 3h2v1H6zM6 4h1v1H6zM7 4h1v1H7zM5 5h1v1H5zM8 5h1v1H8z" fill="currentColor"/></svg>
+      </button>
+    </header>
+
+    <!-- Start screen -->
+    <section class="card start enter" id="screen-start">
+      <figure class="demo">
+        <div class="plot-wrap"><svg id="demo-plot" viewBox="0 0 400 400" role="img" aria-label="Example scatter plot"></svg></div>
+        <figcaption id="demo-caption">Example</figcaption>
+      </figure>
+      <div class="start-text">
+        <h2>How well can you eyeball a correlation?</h2>
+        <ul class="rules">
+          <li>Each round shows a scatter plot. Guess <strong>Pearson's <i>r</i></strong>. In this game it runs from <strong>0</strong> to <strong>0.99</strong>.</li>
+          <li>Type only the digits after <strong>0.</strong> and press <kbd>Enter</kbd>: <strong>6</strong> means 0.60, <strong>63</strong> means 0.63.</li>
+          <li>Off by more than <strong>0.10</strong> → lose a heart. Within <strong>0.02</strong> → win one back (max 5).</li>
+          <li>From round 4, watch for <strong>tricky rounds</strong> that show where <i>r</i> can mislead.</li>
+        </ul>
+        <button class="btn btn-primary" id="start-btn" type="button">Start game <kbd>Enter</kbd></button>
+        <p class="small">Sound on · press <kbd>M</kbd> to mute</p>
+      </div>
+    </section>
+
+    <!-- Game screen -->
+    <section class="game" id="screen-game" hidden>
+      <div class="plot-wrap hero" id="plot-wrap">
+        <svg id="plot" viewBox="0 0 400 400" role="img" aria-label="Scatter plot"></svg>
+        <span class="tricky-badge" id="tricky-badge" hidden>⚠ Tricky round</span>
+      </div>
+
+      <div class="panel" id="panel">
+        <form id="guess-form" autocomplete="off" novalidate>
+          <label for="guess" class="prompt">What is <i>r</i>?</label>
+          <div class="guess-row">
+            <div class="guess-field" id="guess-field">
+              <span class="guess-prefix" aria-hidden="true">0.</span>
+              <input id="guess" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" enterkeyhint="go"
+                     autocomplete="off" spellcheck="false" placeholder="00"
+                     aria-label="Your guess for r: the digits after 0." aria-describedby="guess-hint guess-msg">
+            </div>
+            <button class="btn btn-primary" id="guess-btn" type="submit">Guess</button>
+          </div>
+          <p class="hint" id="guess-hint">Type 1–2 digits · 6 = 0.60</p>
+          <p class="msg" id="guess-msg" role="alert"></p>
+        </form>
+
+        <div class="result" id="result" hidden>
+          <p class="verdict" id="verdict"></p>
+          <svg id="bar" viewBox="0 0 320 84" role="img" aria-label="Your guess compared with the true r"></svg>
+          <p class="detail" id="detail"></p>
+          <div class="explain" id="explain" hidden>
+            <span class="explain-head">Why r misleads here</span>
+            <p id="explain-text"></p>
+          </div>
+          <button class="btn btn-primary" id="next-btn" type="button">Next round <kbd>Enter</kbd></button>
+        </div>
+        <div class="fx" id="fx" aria-hidden="true"></div>
+      </div>
+    </section>
+
+    <!-- Game over screen -->
+    <section class="card over" id="screen-over" hidden>
+      <div class="over-head">
+        <h2 class="over-title" id="over-title">Game over</h2>
+        <p class="over-sub" id="over-sub"></p>
+      </div>
+      <div class="over-body">
+        <figure class="history">
+          <figcaption>
+            <span class="chart-title">Your guesses vs the true <i>r</i></span>
+            <span class="legend">
+              <span class="legend-item"><svg width="12" height="12" aria-hidden="true"><circle cx="6" cy="6" r="4.5" class="pt-hit"/></svg>Within 0.10</span>
+              <span class="legend-item"><svg width="12" height="12" aria-hidden="true"><path d="M2 2L10 10M10 2L2 10" class="pt-miss"/></svg>Missed</span>
+              <span class="legend-item"><svg width="14" height="14" aria-hidden="true"><circle cx="7" cy="7" r="5.5" class="pt-tricky-ring"/></svg>Tricky round</span>
+              <span class="legend-item"><span class="band-swatch"></span>±0.10 band</span>
+            </span>
+          </figcaption>
+          <svg id="history" viewBox="0 0 360 360" role="img" aria-label="Scatter of your guesses against the true correlations"></svg>
+        </figure>
+        <div class="over-side">
+          <div class="stats" id="over-stats"></div>
+          <button class="btn btn-primary" id="again-btn" type="button">Play again <kbd>Enter</kbd></button>
+        </div>
+      </div>
+    </section>
+
+    <footer class="foot"><i>r</i> measures how tightly points follow a straight line. The axis scale never changes it.</footer>
+  </main>
+  <script src="sound.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
